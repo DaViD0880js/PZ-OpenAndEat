@@ -1,24 +1,60 @@
 local OpenAndEat = {}
 
 function OpenAndEat.OnOpenAndEat(player, cannedItem)
+	local playerContainers = ISInventoryPaneContextMenu.getContainers(player)
+	local recipe = nil
+	local openedItem = nil
+	
 	print("Canned item:".. cannedItem:getName())
-	-- Get type of opened canned food item
-	local openedFoodType = cannedItem:getReplaceOnUse() or cannedItem:getReplaceOnUseOn() or cannedItem:getReplaceOnUseFullType()
-
-	-- Replace canned food with opened food
-	if openedFoodType then
-		player:getInventory():Remove(item)
-		local openedFoodItem = InventoryItemFactory.CreateItem(openedFoodType)
-		player:getInventory():AddItem(openedFoodItem)
-		print("Added opened item to inventory")
+	
+	-- Get recipe for opening canned food
+	local recipes = RecipeManager.getUniqueRecipeItems(cannedItem, player, playerContainers)
+	if recipes then
+		print("Got some recipes!")
 		
-		-- Eat opened food
-		ISInventoryPaneContextMenu.eatItem(openedFoodItem, 1, player)
+		for index = 0, recipes:size() - 1 do
+			local tmp = recipes:get(index)
+			recipe = tmp
+			print("Recipe:".. recipe:getName())
+		end
+		if not recipe then return end
+		
+		if RecipeManager.IsRecipeValid(recipe, player, cannedItem, playerContainers) then
+			print("Valid recipe")
+		else
+			print("Invalid recipe :(")
+			return
+		end
+		
+		local createdItem = RecipeManager.PerformMakeItem(recipe, cannedItem, player, playerContainers)
+		openedItem = createdItem
+		
+		if createdItem then
+			print("Created item from recipe!")
+		else
+			print("Item wasn't created from recipe :( :(")
+			return
+		end
+		
+		-- Remove canned food from inventory
+		player:getInventory():Remove(cannedItem)
+		print("Removed old canned thing from inventory?")
+		
+		-- Eat new opened canned food
+		-- ISInventoryPaneContextMenu.eatItem(openedItem, 1, player)
+		print("Ate food?")
 	else
-		print("No openedFoodType")
+		print("No recipes :(")
 		return
 	end
 end
+
+--local containerList = ISInventoryPaneContextMenu.getContainers(playerObj)
+--self.knownRecipes = RecipeManager.getKnownRecipesNumber(self.character);
+--recipe = RecipeManager.getUniqueRecipeItems(itemsCraft[1], playerObj, containerList);
+--local createdItem = InventoryItemFactory.CreateItem(recipe:getResult():getFullType())
+-- RecipeManager.PerformMakeItem(recipe, selectedItem, character, containers)
+--local resultItem = RecipeManager.PerformMakeItem(recipe, selectedItem, playerObj, containers)
 
 function OpenAndEat.OnFillInventoryObjectContextMenu(playerIndex, contextMenu, clickedItems)
 	local playerObj = getSpecificPlayer(playerIndex)
