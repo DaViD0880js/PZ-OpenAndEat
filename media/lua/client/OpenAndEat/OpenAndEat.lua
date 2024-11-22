@@ -3,9 +3,14 @@ local OpenAndEat = {}
 function OpenAndEat.OnOpenAndEat(player, cannedItem)
 	local playerContainers = ISInventoryPaneContextMenu.getContainers(player)
 	local recipe = nil
-	local openedItem = nil
 	
 	print("Canned item:".. cannedItem:getName())
+
+	-- Check if player is hungry
+	if player:getStats():getHunger() < 0.1 then
+		player:Say("I'm not hungry")
+		return
+	end
 	
 	-- Get recipe for opening canned food
 	local recipes = RecipeManager.getUniqueRecipeItems(cannedItem, player, playerContainers)
@@ -27,21 +32,24 @@ function OpenAndEat.OnOpenAndEat(player, cannedItem)
 		end
 		
 		local createdItem = RecipeManager.PerformMakeItem(recipe, cannedItem, player, playerContainers)
-		openedItem = createdItem
+		-- local createdItem = InventoryItemFactory.CreateItem(recipe:getResult():getFullType())
 		
 		if createdItem then
-			print("Created item from recipe!")
+			print("Created item from recipe! Item:".. createdItem:getName())
 		else
 			print("Item wasn't created from recipe :( :(")
 			return
 		end
+
+		-- Add new item to inventory
+		player:getInventory():AddItem(createdItem)
 		
 		-- Remove canned food from inventory
 		player:getInventory():Remove(cannedItem)
 		print("Removed old canned thing from inventory?")
 		
 		-- Eat new opened canned food
-		-- ISInventoryPaneContextMenu.eatItem(openedItem, 1, player)
+		ISInventoryPaneContextMenu.eatItem(createdItem, 1, player:getPlayerNum())
 		print("Ate food?")
 	else
 		print("No recipes :(")
@@ -61,7 +69,7 @@ function OpenAndEat.OnFillInventoryObjectContextMenu(playerIndex, contextMenu, c
 	
 	print("---------------------------------")
 	print("Mod started")
-	
+
 	-- Check for can opener
 	local canOpener = playerObj:getInventory():FindAndReturn("Base.TinOpener")
 	if not canOpener then
