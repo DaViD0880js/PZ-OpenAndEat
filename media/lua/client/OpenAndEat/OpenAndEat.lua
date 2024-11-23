@@ -1,23 +1,6 @@
 local OpenAndEat = {}
 
-function OpenAndEat.OnOpenComplete(player, recipe, itemContainer, playerContainers)
-	local openedCannedItem = player:getInventory():FindAndReturn(recipe:getResult():getType())
-
-	if openedCannedItem then
-		print("Created item from recipe! Item:".. openedCannedItem:getName())
-	else
-		print("Item wasn't created from recipe :( :(")
-		return
-	end
-	
-	-- Eat new opened canned food
-	ISInventoryPaneContextMenu.eatItem(openedCannedItem, 1, player:getPlayerNum())
-	print("Ate food?")
-end
-
 function OpenAndEat.OnOpenAndEat(player, cannedItem, recipe, playerContainers)
-	print("Canned item:".. cannedItem:getName())
-
 	-- Check if player is hungry
 	if player:getStats():getHunger() < 0.1 then
 		player:Say("I'm not hungry")
@@ -48,31 +31,16 @@ function OpenAndEat.OnOpenAndEat(player, cannedItem, recipe, playerContainers)
 	ISCraftingUI.ReturnItemsToOriginalContainer(player, returnToContainer)
 end
 
---local container = itemsUsed[1]:getContainer()
---local containerList = ISInventoryPaneContextMenu.getContainers(player)
---self.knownRecipes = RecipeManager.getKnownRecipesNumber(self.character);
---recipe = RecipeManager.getUniqueRecipeItems(itemsCraft[1], player, containerList);
---local createdItem = InventoryItemFactory.CreateItem(recipe:getResult():getFullType())
--- RecipeManager.PerformMakeItem(recipe, selectedItem, character, containers)
---local resultItem = RecipeManager.PerformMakeItem(recipe, selectedItem, player, containers)
-
--- returing to container?
--- local returnToContainer = {};
--- local container = itemsUsed[1]:getContainer()
--- if not selectedItem.recipe:isCanBeDoneFromFloor() then
--- 	container = self.character:getInventory()
--- 	for _,item in ipairs(itemsUsed) do
--- 		if item:getContainer() ~= self.character:getInventory() then
--- 			table.insert(returnToContainer, item)
--- 		end
--- 	end
--- end
+function OpenAndEat.OnOpenComplete(player, recipe, itemContainer, playerContainers)
+	local openedCannedItem = player:getInventory():FindAndReturn(recipe:getResult():getType())
+	if not openedCannedItem then return end
+	
+	-- Eat new opened canned food
+	ISInventoryPaneContextMenu.eatItem(openedCannedItem, 1, player:getPlayerNum())
+end
 
 function OpenAndEat.OnFillInventoryObjectContextMenu(playerIndex, contextMenu, clickedItems)
 	local player = getSpecificPlayer(playerIndex)
-	
-	print("---------------------------------")
-	print("Mod started")
 
 	-- Check if item is an unopened canned food item
 	local cannedItem = nil
@@ -82,7 +50,6 @@ function OpenAndEat.OnFillInventoryObjectContextMenu(playerIndex, contextMenu, c
 			item = clickedItem.items[1]
 		end
 		
-		print("Item type:", item:getType())
 		if item:getStringItemType() == "CannedFood" and not string.find(item:getType(), "Open") then
 			cannedItem = item
 		end
