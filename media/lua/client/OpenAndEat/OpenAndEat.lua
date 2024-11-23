@@ -15,10 +15,7 @@ function OpenAndEat.OnOpenComplete(player, recipe, itemContainer, playerContaine
 	print("Ate food?")
 end
 
-function OpenAndEat.OnOpenAndEat(player, cannedItem)
-	local playerContainers = ISInventoryPaneContextMenu.getContainers(player)
-	local recipe = nil
-	
+function OpenAndEat.OnOpenAndEat(player, cannedItem, recipe, playerContainers)
 	print("Canned item:".. cannedItem:getName())
 
 	-- Check if player is hungry
@@ -26,43 +23,38 @@ function OpenAndEat.OnOpenAndEat(player, cannedItem)
 		player:Say("I'm not hungry")
 		return
 	end
-	
-	-- Get recipe for opening canned food
-	local recipes = RecipeManager.getUniqueRecipeItems(cannedItem, player, playerContainers)
-	if recipes then
-		print("Got some recipes!")
-		
-		for index = 0, recipes:size() - 1 do
-			local tmp = recipes:get(index)
-			recipe = tmp
-			print("Recipe:".. recipe:getName())
-		end
-		if not recipe then return end
-		
-		if RecipeManager.IsRecipeValid(recipe, player, cannedItem, playerContainers) then
-			print("Valid recipe")
-		else
-			print("Invalid recipe :(")
-			return
-		end
 
-		local cannedItemContainer = cannedItem:getContainer()
-		local craftAction = ISCraftAction:new(player, cannedItem, recipe:getTimeToMake(), recipe, cannedItemContainer, playerContainers)
-		craftAction:setOnComplete(OpenAndEat.OnOpenComplete, player, recipe, cannedItemContainer, playerContainers)
-		ISTimedActionQueue.add(craftAction)
-	else
-		print("No recipes :(")
-		return
+	-- Get needed items for recipe
+	local items = RecipeManager.getAvailableItemsNeeded(recipe, player, playerContainers, cannedItem, nil)
+
+	-- Keep track of which items came from other containers and transer them all to the main inventory
+	local cannedItemContainer = cannedItem:getContainer()
+	local returnToContainer = {}
+	for index = 1, items:size() do
+		local item = items:get(index - 1)
+
+		if item:getContainer() ~= player:getInventory() then
+			ISTimedActionQueue.add(ISInventoryTransferAction:new(player, item, item:getContainer(), player:getInventory(), nil))
+			table.insert(returnToContainer, item)
+		end
 	end
+	
+	-- Initiate craft action to open canned food
+	local craftAction = ISCraftAction:new(player, cannedItem, recipe:getTimeToMake(), recipe, cannedItemContainer, playerContainers)
+	craftAction:setOnComplete(OpenAndEat.OnOpenComplete, player, recipe, cannedItemContainer, playerContainers)
+	ISTimedActionQueue.add(craftAction)
+
+	-- Return items to their original containers
+	ISCraftingUI.ReturnItemsToOriginalContainer(player, returnToContainer)
 end
 
 --local container = itemsUsed[1]:getContainer()
---local containerList = ISInventoryPaneContextMenu.getContainers(playerObj)
+--local containerList = ISInventoryPaneContextMenu.getContainers(player)
 --self.knownRecipes = RecipeManager.getKnownRecipesNumber(self.character);
---recipe = RecipeManager.getUniqueRecipeItems(itemsCraft[1], playerObj, containerList);
+--recipe = RecipeManager.getUniqueRecipeItems(itemsCraft[1], player, containerList);
 --local createdItem = InventoryItemFactory.CreateItem(recipe:getResult():getFullType())
 -- RecipeManager.PerformMakeItem(recipe, selectedItem, character, containers)
---local resultItem = RecipeManager.PerformMakeItem(recipe, selectedItem, playerObj, containers)
+--local resultItem = RecipeManager.PerformMakeItem(recipe, selectedItem, player, containers)
 
 -- returing to container?
 -- local returnToContainer = {};
@@ -77,7 +69,7 @@ end
 -- end
 
 function OpenAndEat.OnFillInventoryObjectContextMenu(playerIndex, contextMenu, clickedItems)
-	local playerObj = getSpecificPlayer(playerIndex)
+	local player = getSpecificPlayer(playerIndex)
 	
 	print("---------------------------------")
 	print("Mod started")
@@ -98,7 +90,28 @@ function OpenAndEat.OnFillInventoryObjectContextMenu(playerIndex, contextMenu, c
 
 	if not cannedItem then return end
 
-	contextMenu:addOption("Open and eat", playerObj, OpenAndEat.OnOpenAndEat, cannedItem)
+	-- Get list of recipes for cannedItem. One of these should be the recipe to open it
+	local playerContainers = ISInventoryPaneContextMenu.getContainers(player)
+	local recipes = RecipeManager.getUniqueRecipeItems(cannedItem, player, playerContainers)
+
+	if not recipes then return end
+
+	-- Find the recipe to open cannedItem
+	local recipe = nil
+	for index = 0, recipes:size() - 1 do
+		local tmpRecipe = recipes:get(index)
+		-- We want the recipe where the result item type contains the word "Open"
+		if string.find(tmpRecipe:getResult():getType(), "Open") then
+			recipe = tmpRecipe
+		end
+	end
+
+	if not recipe then return end
+
+	-- Check if recipe is valid (you have a can opener)
+	if not RecipeManager.IsRecipeValid(recipe, player, cannedItem, playerContainers) then return end
+
+	contextMenu:addOption("Open and eat", player, OpenAndEat.OnOpenAndEat, cannedItem, recipe, playerContainers)
 end
 
 Events.OnFillInventoryObjectContextMenu.Add(OpenAndEat.OnFillInventoryObjectContextMenu)
