@@ -94,27 +94,6 @@ function OpenAndEat.OnFillInventoryObjectContextMenu(playerIndex, contextMenu, c
 	if cannedItem then 
 		contextMenu:addOption("Open and eat", playerObj, OpenAndEat.OnOpenAndEat, cannedItem)
 	end
-	
---	Check if item is canned food
---	local itemName = item:getName()
-	
-	
---	-- Get type of opened canned food item
---	local openedFoodType = item:getReplaceOnUse()
---	
---	-- Replace canned food with opened food
---	if openedFoodType then
---		playerObj:getInventory():Remove(item)
---		local openedFoodItem = InventoryItemFactory.CreateItem(openedFoodType)
---		playerObj:getInventory():AddItem(openedFoodItem)
---		print("Added opened item to inventory")
---		
---		-- Eat opened food
---		ISInventoryPaneContextMenu.eatItem(openedFoodItem, 1, playerObj)
---	else
---		print("No openedFoodType")
---		return
---	end
 end
 
 Events.OnFillInventoryObjectContextMenu.Add(OpenAndEat.OnFillInventoryObjectContextMenu)
