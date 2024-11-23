@@ -1,9 +1,10 @@
 local OpenAndEat = {}
 
+-- Triggered once player clicks on "Open and eat" context menu
 function OpenAndEat.OnOpenAndEat(player, cannedItem, recipe, playerContainers)
 	-- Check if player is hungry
 	if player:getStats():getHunger() < 0.1 then
-		player:Say("I'm not hungry")
+		player:Say(getText("Sandbox_OpenAndEat_Im_not_hungry"))
 		return
 	end
 
@@ -31,6 +32,7 @@ function OpenAndEat.OnOpenAndEat(player, cannedItem, recipe, playerContainers)
 	ISCraftingUI.ReturnItemsToOriginalContainer(player, returnToContainer)
 end
 
+-- Triggered after player has finished animation for opening canned food
 function OpenAndEat.OnOpenComplete(player, recipe, itemContainer, playerContainers)
 	local openedCannedItem = player:getInventory():FindAndReturn(recipe:getResult():getType())
 	if not openedCannedItem then return end
@@ -39,6 +41,7 @@ function OpenAndEat.OnOpenComplete(player, recipe, itemContainer, playerContaine
 	ISInventoryPaneContextMenu.eatItem(openedCannedItem, 1, player:getPlayerNum())
 end
 
+-- Triggered by OnFillInventoryObjectContextMenu event hook
 function OpenAndEat.OnFillInventoryObjectContextMenu(playerIndex, contextMenu, clickedItems)
 	local player = getSpecificPlayer(playerIndex)
 
@@ -78,7 +81,7 @@ function OpenAndEat.OnFillInventoryObjectContextMenu(playerIndex, contextMenu, c
 	-- Check if recipe is valid (you have a can opener)
 	if not RecipeManager.IsRecipeValid(recipe, player, cannedItem, playerContainers) then return end
 
-	contextMenu:addOption("Open and eat", player, OpenAndEat.OnOpenAndEat, cannedItem, recipe, playerContainers)
+	contextMenu:addOption(getText("ContextMenu_Open_and_eat"), player, OpenAndEat.OnOpenAndEat, cannedItem, recipe, playerContainers)
 end
 
 Events.OnFillInventoryObjectContextMenu.Add(OpenAndEat.OnFillInventoryObjectContextMenu)
