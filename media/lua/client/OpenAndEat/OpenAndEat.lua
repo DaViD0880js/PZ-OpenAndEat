@@ -3,7 +3,8 @@ local OpenAndEat = {}
 -- Triggered once player clicks on "Open and eat" context menu
 function OpenAndEat.OnOpenAndEat(player, cannedItem, recipe, playerContainers)
 	-- Check if player is hungry
-	if player:getStats():getHunger() < 0.1 then
+	local isHungry = player:getMoodles():getMoodleLevel(MoodleType.FoodEaten) < 3 or player:getNutrition():getCalories() < 1000
+	if not isHungry then
 		player:Say(getText("Sandbox_OpenAndEat_Im_not_hungry"))
 		return
 	end
