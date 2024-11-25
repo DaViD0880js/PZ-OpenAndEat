@@ -35,8 +35,22 @@ end
 
 -- Triggered after player has finished animation for opening canned food
 function OpenAndEat.OnOpenComplete(player, recipe, itemContainer, playerContainers)
+	-- Most of the time the openedCannedItem will be returned to the player's main inventory
 	local openedCannedItem = player:getInventory():FindAndReturn(recipe:getResult():getType())
-	if not openedCannedItem then return end
+	if not openedCannedItem then
+		-- Sometimes though an item will go back to its original container
+		for index = 1, playerContainers:size() do
+			local container = playerContainers:get(index - 1)
+			local foundOpenedItem = container:FindAndReturn(recipe:getResult():getType())
+
+			if foundOpenedItem then
+				openedCannedItem = foundOpenedItem
+				break
+			end
+		end
+
+		if not openedCannedItem then return end
+	end
 	
 	-- Eat new opened canned food
 	ISInventoryPaneContextMenu.eatItem(openedCannedItem, 1, player:getPlayerNum())
