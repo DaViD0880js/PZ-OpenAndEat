@@ -1,3 +1,3 @@
-Sandbox_EN = {
-    Sandbox_OpenAndEat_Im_not_hungry = "I'm not hungry"
+Sandbox_PT = {
+    Sandbox_OpenAndEat_Im_not_hungry = "Não estou com fome"
 }
